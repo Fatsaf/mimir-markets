@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { ExternalLink, FileCheck2, ShieldCheck, Scale, ScrollText } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ShieldCheck, Scale, ScrollText } from "lucide-react";
 
 import { GlassCard } from "@/components/ui";
-import { formatDeadline, normalizeResolutionSource } from "@/lib/constants";
+import { normalizeResolutionSource } from "@/lib/constants";
 import { computeClaimQuality } from "@/lib/claimQuality";
 import type { VSData } from "@/lib/contract";
+import ResearchSourceCitations from "@/components/research/ResearchSourceCitations";
 
 type SettlementExplanationCardProps = {
   vs: VSData;
@@ -26,18 +27,11 @@ function getConfidenceTier(confidence: number): ConfidenceTier {
   return "low";
 }
 
-const confidenceClasses: Record<ConfidenceTier, string> = {
-  high: "border-pv-emerald/35 bg-pv-emerald/[0.12] text-pv-emerald",
-  medium: "border-pv-cyan/35 bg-pv-cyan/[0.12] text-pv-cyan",
-  low: "border-amber-400/35 bg-amber-400/[0.12] text-amber-300",
-};
-
 export default function SettlementExplanationCard({
   vs,
   className = "",
 }: SettlementExplanationCardProps) {
   const t = useTranslations("settlement");
-  const locale = useLocale();
 
   const normalizedSource = useMemo(
     () => normalizeResolutionSource(vs.resolution_url),
@@ -160,27 +154,20 @@ export default function SettlementExplanationCard({
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-xl border border-pv-ink/[0.08] bg-pv-bg/40 p-4">
-                <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-pv-fuch/80">
-                  <FileCheck2 size={14} />
-                  {t("evidence")}
-                </div>
-                <div className="text-sm font-semibold text-pv-text">{sourceHost}</div>
-                <p className="mt-2 text-xs leading-relaxed text-pv-muted">
-                  {t("evidenceHint")}
-                </p>
-                {normalizedSource ? (
-                  <a
-                    href={normalizedSource}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 text-xs text-pv-cyan hover:text-pv-text transition-colors"
-                  >
-                    <ExternalLink size={12} />
-                    {t("openSource")}
-                  </a>
-                ) : null}
-              </div>
+              <ResearchSourceCitations
+                sources={[
+                  {
+                    url: vs.resolution_url,
+                    domain: sourceHost === t("unknownSource") ? undefined : sourceHost,
+                    trustTier: "primary",
+                    contentHash: (vs as { evidence_hash?: string }).evidence_hash,
+                    excerpt: vs.resolution_summary,
+                  },
+                ]}
+                deadlineUnix={typeof vs.deadline === "number" ? vs.deadline : null}
+                cancelled={vs.state === "cancelled"}
+                title={t("evidence")}
+              />
 
               <div className="rounded-xl border border-pv-ink/[0.08] bg-pv-bg/40 p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-pv-gold/80">
